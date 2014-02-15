@@ -8,6 +8,12 @@ OBJModel model;
 Serial port;  
 Quaternion quat;
 
+PVector loc   = new PVector();
+PVector accel = new PVector();
+PVector vel   = new PVector();
+
+float gravity = 2.8;
+
 
 void setup() {
   size(800, 500, OPENGL); 
@@ -28,7 +34,7 @@ void draw() {
   stroke(0);
  
   pushMatrix();
-    translate(width / 2, height / 2); 
+    translate(width / 2 + loc.x, height / 2 + loc.y, loc.z); 
 //    rotateX(rotX * -1);
 //    rotateY(rotZ *-1 + PI/2);
 //    rotateZ(rotY * -1);
@@ -37,6 +43,10 @@ void draw() {
     rotate(axis[0], -axis[1], -axis[3], -axis[2]);
     model.draw();
   popMatrix();
+  
+  vel.x = 0;
+  vel.y = 0;
+  vel.z = 0;
 }
 
 
@@ -44,9 +54,22 @@ void serialEvent(Serial port) {
   String rawData = port.readStringUntil(36); // '$' = ascii #36
   if(rawData != null) {
     String[] vals = rawData.split(",");
+    
+    // gyro data
     float rotX = float(vals[4]);
     float rotY = float(vals[5]);
     float rotZ = float(vals[6]); 
     quat = new Quaternion().createFromEuler(rotY, rotZ, rotX);
+    
+    // accelerometer data
+    accel.x = int(vals[1]) / 1023;
+    accel.z = int(vals[2]) / 1023;
+    accel.y = int((int(vals[3])/ 1023) - gravity);
+    println(accel.x + " : " + accel.y + " : " + accel.z);
+
+    // calculate adjustments
+    vel.add(accel);
+    vel.mult(8);
+    loc.sub(vel); 
   }
 }
