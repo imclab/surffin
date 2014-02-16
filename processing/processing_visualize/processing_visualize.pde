@@ -2,98 +2,95 @@ import peasy.test.*;
 import peasy.org.apache.commons.math.*;
 import peasy.*;
 import peasy.org.apache.commons.math.geometry.*;
-
 import toxi.geom.*;
 import toxi.processing.*;
-import saito.objloader.*;
-
 
 ToxiclibsSupport gfx;
-OBJModel model;
 PeasyCam cam;
 
 float gravity = 2.8;
 int boxCounter;
+int prevTime;
 
 String[] rawData;
+ArrayList<Coordinate> allCoordinates = new ArrayList<Coordinate>();
 
 
 void setup() {
   size(800, 500, OPENGL); 
   colorMode(HSB);
   cam = new PeasyCam(this, 100);
-  cam.setMinimumDistance(50);
 
   rawData = loadStrings("shake.txt");
-
-  //  model = new OBJModel(this, "surf.obj", "absolute", TRIANGLES);
-  //  model.scale(2);
-  //  model.translateToCenter();
+  parseTextFile("shake.txt");
 }
 
 void draw() {
-  background(200);
+  background(40);
 
+ // center axis
   fill(100);
   box(5);
-  stroke(255, 0, 0);
+  stroke(255, 255, 255);
   line(0, 0, 0, 100, 0, 0);
-  stroke(0, 255, 0);
+  stroke(80, 255, 255);
   line(0, 0, 0, 0, 100, 0);
-  stroke(0, 0, 255);
+  stroke(180, 255, 255);
   line(0, 0, 0, 0, 0, 100);
 
-  stroke(0);
+  stroke(255);
   noFill();
-
-  parseTextFile("shake.txt");
+  
+  drawBoxes(boxCounter);
+  println(boxCounter);
+  if(millis() % 10 == 0) {
+    boxCounter++;
+    if(boxCounter >= allCoordinates.size()-1) {
+      boxCounter = 0;
+    }
+  } 
 }
+
+void drawBoxes(int _counter) {
+  for(int i=1; i < _counter; i++) {
+    Coordinate c = allCoordinates.get(i);
+    Coordinate pc = allCoordinates.get(i-1);
+    c.display();
+    stroke(i-1*(255/allCoordinates.size()), 255, 255);
+    line(pc.loc.x, pc.loc.y, pc.loc.z, c.loc.x, c.loc.y, c.loc.z);
+    //println(c.loc.x + " : " + c.loc.y + " : " + c.loc.z);
+  } 
+}
+
 
 void parseTextFile(String _name) {
   PVector prevLoc = new PVector();
   
   for (int i=0; i<rawData.length; i++) {
-    if (rawData[i] != null) {
+    if (rawData[i] != null) {    
       String[] vals = rawData[i].trim().split(",");
-      // data holders
-      PVector loc   = new PVector();
-      PVector accel = new PVector();
-      PVector vel   = new PVector();
-      PVector force = new PVector();
-      Quaternion quat;
-
-
+      Coordinate c = new Coordinate();
+      
       // gyro data
       float rotX = float(vals[4]);
       float rotY = float(vals[5]);
       float rotZ = float(vals[6]); 
-      quat = new Quaternion().createFromEuler(rotY, rotZ, rotX);
-
+      c.quat = new Quaternion().createFromEuler(rotY, rotZ, rotX);
+      
       // accelerometer data
-      force.x = int(vals[1]) / 1023;
-      force.z = int(vals[2]) / 1023;
-      force.y = int((int(vals[3])/ 1023) - gravity);
-      //println(accel.x + " : " + accel.y + " : " + accel.z);
+      c.force.x = int(vals[1]) / 100;
+      c.force.z = int(vals[2]) / 100;
+      c.force.y = int((int(vals[3])/ 100) - gravity)/10;
 
-      // calculate adjustments
-      force.mult(5);
-      accel = force;
-      vel.add(accel);
-      vel.mult(5);
-      loc.sub(vel);
+      // calculate position
+      c.force.mult(15);
+      c.accel = c.force;
+      c.vel.add(c.accel);
+      //c.loc = prevLoc;
+      c.loc.sub(c.vel); 
+      allCoordinates.add(c);
 
-      pushMatrix();
-      translate(loc.x, loc.y, loc.z); 
-      float[] axis = quat.toAxisAngle();
-      rotateY(PI/2);
-      rotate(axis[0], -axis[1], -axis[3], -axis[2]);
-      box(3);
-      popMatrix();
-      
-      stroke(i*0.25, 255, 255);
-      line(prevLoc.x, prevLoc.y, prevLoc.z, loc.x, loc.y, loc.z);
-      
-      prevLoc = loc;
+      prevLoc = c.loc;
     }
   }
 }

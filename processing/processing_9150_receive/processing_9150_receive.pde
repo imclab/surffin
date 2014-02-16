@@ -19,7 +19,7 @@ float gravity = 2.8;
 void setup() {
   size(800, 500, OPENGL); 
   
-//  println(Serial.list());
+  println(Serial.list());
   String portName = Serial.list()[7];
   port = new Serial(this, portName, 115200);
   //port.bufferUntil(36);

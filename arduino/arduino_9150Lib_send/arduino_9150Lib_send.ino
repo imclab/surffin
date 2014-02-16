@@ -86,6 +86,7 @@ void loop()
     MPU.printVector(MPU.m_calAccel);                       // print the calibrated accel data
 //  MPU.printVector(MPU.m_calMag);                         // print the calibrated mag data
     MPU.printAngles(MPU.m_fusedEulerPose);                 // print the output of the data fusion
+    Serial.print(millis()); Serial.print(",");
     Serial.println("$");
   }
 }
