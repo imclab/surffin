@@ -18,43 +18,66 @@ MPU9150Lib MPU;
 
 File myFile;
 boolean done;
-
+const int chipSelect = 10;
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
+  pinMode(10, OUTPUT);
+  while(!Serial);
+  if(!SD.begin(chipSelect)) {
+    Serial.println("SD initialization failed!");
+    return; 
+  } 
+  Serial.print("initialized");
+  if(SD.exists("TEST.TXT")) {
+    SD.remove("TEST.TXT");
+    myFile = SD.open("TEST.TXT", FILE_WRITE);
+    Serial.println("previous file deleted, file created");
+  } 
+  else {
+    myFile = SD.open("TEST.TXT", FILE_WRITE);
+    Serial.println("file created");
+  }
   Wire.begin();
   done = false;
-    if(!SD.begin(10)) {
-      Serial.println("SD initialization failed!");
-      return; 
-    } 
-    if(SD.exists("test.txt")) {
-       SD.remove("test.txt");
-       myFile = SD.open("test.txt", FILE_WRITE);
-    } else {
-       myFile = SD.open("test.txt", FILE_WRITE);
-    }
-    
+
   MPU.selectDevice(0);                        // only really necessary if using device 1
   MPU.init(MPU_UPDATE_RATE, MPU_MAG_MIX_GYRO_AND_MAG, MAG_UPDATE_RATE, MPU_LPF_RATE);   // start the MPU
 }
 
 void loop()
-{  
-  if (MPU.read() && millis() < 6000 && !done) { 
-    myFile.print(MPU.m_calAccel[VEC3_X]); myFile.print(",");
-    myFile.print(MPU.m_calAccel[VEC3_Y]); myFile.print(",");
-    myFile.print(MPU.m_calAccel[VEC3_Z]); myFile.print(",");
-    
-    myFile.print(MPU.m_fusedEulerPose[VEC3_X]); myFile.print(",");
-    myFile.print(MPU.m_fusedEulerPose[VEC3_Y]); myFile.print(",");
-    myFile.print(MPU.m_fusedEulerPose[VEC3_Z]); myFile.print(",");
-    
-    Serial.println(millis());
-  } else {
+{    
+  delay(100);
+  if (millis() < 10000 && !done) { 
+    MPU.read();
+    myFile.print("+"); 
+    myFile.print(",");
+
+    myFile.print(MPU.m_calAccel[VEC3_X]); 
+    myFile.print(",");
+    myFile.print(MPU.m_calAccel[VEC3_Y]); 
+    myFile.print(",");
+    myFile.print(MPU.m_calAccel[VEC3_Z]); 
+    myFile.print(",");
+
+    myFile.print(MPU.m_fusedEulerPose[VEC3_X]); 
+    myFile.print(",");
+    myFile.print(MPU.m_fusedEulerPose[VEC3_Y]); 
+    myFile.print(",");
+    myFile.print(MPU.m_fusedEulerPose[VEC3_Z]); 
+    myFile.print(",");
+
+    myFile.println(millis());
+    Serial.print("recording  "); Serial.println(millis());
+  } 
+  else {
+    Serial.println("done");
     myFile.close();
-    Serial.println("RECORDING COMPLETE!");
-    done = true; 
+    done = true;
   }
 }
+
+
+
+

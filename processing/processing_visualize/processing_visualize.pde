@@ -42,8 +42,8 @@ void draw() {
   noFill();
   
   drawBoxes(boxCounter);
-  println(boxCounter);
-  if(millis() % 10 == 0) {
+
+  if(millis() % 3 == 0) {
     boxCounter++;
     if(boxCounter >= allCoordinates.size()-1) {
       boxCounter = 0;
@@ -65,11 +65,15 @@ void drawBoxes(int _counter) {
 
 void parseTextFile(String _name) {
   PVector prevLoc = new PVector();
+  int prevTime = 0;
   
   for (int i=0; i<rawData.length; i++) {
     if (rawData[i] != null) {    
       String[] vals = rawData[i].trim().split(",");
       Coordinate c = new Coordinate();
+      int timestamp = int(vals[7]);
+      println(timestamp);
+      float deltaTime = timestamp - prevTime;
       
       // gyro data
       float rotX = float(vals[4]);
@@ -78,19 +82,19 @@ void parseTextFile(String _name) {
       c.quat = new Quaternion().createFromEuler(rotY, rotZ, rotX);
       
       // accelerometer data
-      c.force.x = int(vals[1]) / 100;
-      c.force.z = int(vals[2]) / 100;
-      c.force.y = int((int(vals[3])/ 100) - gravity)/10;
+      c.force.x = int(vals[1]) / deltaTime;
+      c.force.z = int(vals[2]) / deltaTime;
+      c.force.y = int((int(vals[3])/ deltaTime));
 
       // calculate position
-      c.force.mult(15);
+      //c.force.mult(15);
       c.accel = c.force;
       c.vel.add(c.accel);
-      //c.loc = prevLoc;
-      c.loc.sub(c.vel); 
+      c.loc.add(c.vel); 
       allCoordinates.add(c);
 
       prevLoc = c.loc;
+      prevTime = timestamp;
     }
   }
 }
